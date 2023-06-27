@@ -2,22 +2,13 @@ package sitemap
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 )
 
-// TODO Add tests for:
-// - IgnoreQuery
-// - IgnoreFragment
-// - ChangeFreq
-// - LastMod
-
-func Test_Generate_ExpectSitemapToBeSuccessfullyGenerated(t *testing.T) {
-	var writer bytes.Buffer
-
+func TestSitemap(t *testing.T) {
 	server, err := createServer()
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -36,7 +27,6 @@ func Test_Generate_ExpectSitemapToBeSuccessfullyGenerated(t *testing.T) {
 			}
 		}
 	}()
-	defer server.Shutdown(context.Background())
 
 	tries := 0
 	for {
@@ -52,29 +42,57 @@ func Test_Generate_ExpectSitemapToBeSuccessfullyGenerated(t *testing.T) {
 		tries++
 		if tries > 5 {
 			t.Errorf("Expected server to start, got %v", err)
-			break
+			return
 		}
 	}
 
-	sitemap := New()
-	sitemap.Verbose = true
-	sitemap.LastMod = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-	err = sitemap.Generate(&writer, &url)
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-		return
-	}
+	t.Run("TestDefault", func(t *testing.T) {
+		t.Parallel()
+		var writer bytes.Buffer
+		sitemap := New()
 
-	expected, err := os.ReadFile("fixtures/sitemap.xml")
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-		return
-	}
+		err := sitemap.Generate(&writer, &url)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+			return
+		}
 
-	if writer.String() != string(expected) {
-		t.Errorf("Expected %v, got %v", string(expected), writer.String())
-		return
-	}
+		expected, err := os.ReadFile("fixtures/sitemap_1.xml")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+			return
+		}
+
+		if writer.String() != string(expected) {
+			t.Errorf("Expected %v, got %v", string(expected), writer.String())
+			return
+		}
+	})
+
+	t.Run("TestQueryChangeFreqLastMod", func(t *testing.T) {
+		t.Parallel()
+		var writer bytes.Buffer
+		sitemap := New()
+		sitemap.IgnoreQuery = false
+		sitemap.ChangeFreq = "monthly"
+		sitemap.LastMod = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+		err := sitemap.Generate(&writer, &url)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+			return
+		}
+
+		expected, err := os.ReadFile("fixtures/sitemap_2.xml")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+			return
+		}
+
+		if writer.String() != string(expected) {
+			t.Errorf("Expected %v, got %v", string(expected), writer.String())
+			return
+		}
+	})
 }
 
 func createServer() (*http.Server, error) {

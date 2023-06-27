@@ -28,9 +28,8 @@ func main() {
 	defer file.Close()
 
 	s := sitemap.New()
-	// s.IgnoreQuery = true
-	// s.IgnoreFragment = true
-	// s.Verbose = false
+	sitemap.LastMod = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+	sitemap.ChangeFreq = "monthly"
 
 	url := "https://example.com"
 	err = s.Generate(file, &url)
@@ -38,4 +37,18 @@ func main() {
 		fmt.Printf("Error generating sitemap: %v", err)
 	}
 }
+```
+
+sitemap.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/</loc>
+    <lastmod>2023-01-01T00:00:00Z</lastmod>
+    <priority>1.0</priority>
+	<changefreq>monthly</changefreq>
+  </url>
+</urlset>
 ```

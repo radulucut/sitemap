@@ -21,28 +21,26 @@ type URL struct {
 }
 
 type Sitemap struct {
-	IgnoreQuery    bool      // Ignore query string in URLs (i.e. example.com/?foo=bar)
-	IgnoreFragment bool      // Ignore fragment in URLs (i.e. example.com/#fragment)
-	ChangeFreq     string    // Add <changefreq> to URLs (not added if empty)
-	LastMod        time.Time // Add custom <lastmod> to URLs (default is time.Now())
-	Verbose        bool      // Verbose logging
-	baseURL        *xurl.URL
-	wg             sync.WaitGroup
-	crawled        map[string]int
-	crawledMutex   sync.Mutex
-	httpClient     *http.Client
+	IgnoreQuery  bool      // Ignore query string in URLs (i.e. example.com/?foo=bar)
+	ChangeFreq   string    // Add <changefreq> to URLs (not added if empty)
+	LastMod      time.Time // Add custom <lastmod> to URLs (default is time.Now())
+	Verbose      bool      // Verbose logging
+	baseURL      *xurl.URL
+	wg           sync.WaitGroup
+	crawled      map[string]int
+	crawledMutex sync.Mutex
+	httpClient   *http.Client
 }
 
 func New() *Sitemap {
 	return &Sitemap{
-		IgnoreQuery:    true,
-		IgnoreFragment: true,
-		Verbose:        false,
-		baseURL:        nil,
-		httpClient:     nil,
-		wg:             sync.WaitGroup{},
-		crawled:        nil,
-		crawledMutex:   sync.Mutex{},
+		IgnoreQuery:  true,
+		Verbose:      false,
+		baseURL:      nil,
+		httpClient:   nil,
+		wg:           sync.WaitGroup{},
+		crawled:      nil,
+		crawledMutex: sync.Mutex{},
 	}
 }
 
@@ -223,16 +221,16 @@ func (s *Sitemap) parseURL(rawURL *string) (*string, error) {
 		u.RawQuery = ""
 	}
 
-	if s.IgnoreFragment {
-		u.Fragment = ""
-	}
+	u.Fragment = ""
 
-	if u.Path == "" {
-		u.Path = "/"
-	}
+	if u.RawQuery == "" {
+		if u.Path == "" {
+			u.Path = "/"
+		}
 
-	if u.Path[len(u.Path)-1] != '/' {
-		u.Path += "/"
+		if u.Path[len(u.Path)-1] != '/' {
+			u.Path += "/"
+		}
 	}
 
 	url := u.String()
@@ -246,11 +244,6 @@ func (s *Sitemap) writeXML(w io.Writer) error {
 	)
 	if err != nil {
 		return err
-	}
-
-	lastMod := s.LastMod
-	if lastMod.IsZero() {
-		lastMod = time.Now()
 	}
 
 	changeFreq := ""
@@ -285,7 +278,7 @@ func (s *Sitemap) writeXML(w io.Writer) error {
 
 		_, err = w.Write([]byte(fmt.Sprintf("  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n    <priority>%.1f</priority>%s\n  </url>\n",
 			url.Loc,
-			lastMod.Format(time.RFC3339),
+			s.LastMod.Format(time.RFC3339),
 			priority,
 			changeFreq,
 		)))
