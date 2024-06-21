@@ -21,26 +21,25 @@ type URL struct {
 }
 
 type Sitemap struct {
-	IgnoreQuery  bool      // Ignore query string in URLs (i.e. example.com/?foo=bar)
-	ChangeFreq   string    // Add <changefreq> to URLs (not added if empty)
-	LastMod      time.Time // Add custom <lastmod> to URLs (default is time.Now())
-	Verbose      bool      // Verbose logging
-	baseURL      *xurl.URL
-	wg           sync.WaitGroup
-	crawled      map[string]int
-	crawledMutex sync.Mutex
-	httpClient   *http.Client
+	sync.Mutex
+	IgnoreQuery bool      // Ignore query string in URLs (i.e. example.com/?foo=bar)
+	ChangeFreq  string    // Add <changefreq> to URLs (not added if empty)
+	LastMod     time.Time // Add custom <lastmod> to URLs (default is time.Now())
+	Verbose     bool      // Verbose logging
+	baseURL     *xurl.URL
+	wg          sync.WaitGroup
+	crawled     map[string]int
+	httpClient  *http.Client
 }
 
 func New() *Sitemap {
 	return &Sitemap{
-		IgnoreQuery:  true,
-		Verbose:      false,
-		baseURL:      nil,
-		httpClient:   nil,
-		wg:           sync.WaitGroup{},
-		crawled:      nil,
-		crawledMutex: sync.Mutex{},
+		IgnoreQuery: true,
+		Verbose:     false,
+		baseURL:     nil,
+		httpClient:  nil,
+		wg:          sync.WaitGroup{},
+		crawled:     nil,
 	}
 }
 
@@ -66,8 +65,8 @@ func (s *Sitemap) Generate(w io.Writer, url *string) error {
 }
 
 func (s *Sitemap) mapCrawl(url *string, level int) bool {
-	s.crawledMutex.Lock()
-	defer s.crawledMutex.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	_, ok := s.crawled[*url]
 	if ok {
@@ -91,8 +90,8 @@ func (s *Sitemap) mapCrawl(url *string, level int) bool {
 }
 
 func (s *Sitemap) invalidateURL(url *string) {
-	s.crawledMutex.Lock()
-	defer s.crawledMutex.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
 	s.crawled[*url] = -1
 }
